@@ -5,6 +5,7 @@
 **Прайсчекер для Path of Exile с колонкой «Рубли» по курсу FunPay**
 
 [![Скачать](https://img.shields.io/badge/Скачать-Releases-2ea44f?style=for-the-badge&logo=github)](../../releases/latest)
+[![Поддержать](https://img.shields.io/badge/Поддержать-DonationAlerts-F57507?style=for-the-badge)](https://www.donationalerts.com/r/parovoz24)
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Path of Exile](https://img.shields.io/badge/Path%20of%20Exile-1-AF6025)
@@ -106,6 +107,12 @@
 
 Патч рассчитан на версию Awakened PoE Trade от 25.09.2026 (коммит
 [`3188208`](https://github.com/SnosMe/awakened-poe-trade/commit/3188208)).
+
+## Поддержать проект
+
+Если сборка пригодилась — можно поддержать автора 🧡
+
+<a href="https://www.donationalerts.com/r/parovoz24"><img src="https://img.shields.io/badge/DonationAlerts-parovoz24-F57507?style=for-the-badge" alt="Поддержать на DonationAlerts"></a>
 
 ## Благодарности и лицензия
 
