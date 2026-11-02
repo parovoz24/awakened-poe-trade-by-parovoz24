@@ -2,7 +2,7 @@
 # Result: "Awakened PoE Trade (RUB).exe" on the Desktop (portable, no auto-updates).
 # Work files (sources, node_modules, log) go to Documents\APT-RUB, outside the repository.
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $patch = Join-Path $root 'patch\funpay-rub-column.patch'
 $base = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'APT-RUB'
 New-Item -ItemType Directory -Path $base -Force | Out-Null

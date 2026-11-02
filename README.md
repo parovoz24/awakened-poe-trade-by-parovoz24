@@ -93,10 +93,9 @@
 
 ```
 ├── build.cmd                     запуск сборки
+├── build.ps1                     скрипт сборки
 ├── package.cmd                   упаковка релиза (.zip)
-├── scripts/
-│   ├── build.ps1                 скрипт сборки
-│   └── package.ps1               скрипт упаковки
+├── package.ps1                   скрипт упаковки
 ├── patch/
 │   └── funpay-rub-column.patch   все изменения относительно оригинала
 ├── docs/

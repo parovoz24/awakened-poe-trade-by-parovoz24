@@ -1,6 +1,6 @@
 ﻿# Packs the built program into a release folder + .zip on the Desktop.
 $ErrorActionPreference = 'Stop'
-$root = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
+$root = Split-Path -Parent $MyInvocation.MyCommand.Path
 $work = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'APT-RUB'
 $desktop = [Environment]::GetFolderPath('Desktop')
 $name = 'awakened poe trade by parovoz24'
