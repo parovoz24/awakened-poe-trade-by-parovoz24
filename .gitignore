@@ -1,0 +1,6 @@
+# build output / work files
+awakened-poe-trade/
+node_modules/
+*.exe
+*.zip
+build-log.txt

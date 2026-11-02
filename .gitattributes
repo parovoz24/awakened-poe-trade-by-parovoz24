@@ -1,0 +1,4 @@
+*.patch -text
+*.ps1 -text
+*.cmd -text
+*.txt -text
