@@ -22,73 +22,97 @@ index cb209c0..d0854c1 100644
        const proxyReq = net.request({
          url: 'https://' + req.url.slice('/proxy/'.length),
 diff --git a/renderer/public/data/en/app_i18n.json b/renderer/public/data/en/app_i18n.json
-index 1a1f8df..867848b 100644
+index 1a1f8df..4f3d3b5 100644
 --- a/renderer/public/data/en/app_i18n.json
 +++ b/renderer/public/data/en/app_i18n.json
-@@ -315,6 +315,7 @@
+@@ -315,6 +315,10 @@
      "you_have": "You have",
      "stack": "Stack",
      "legacy_bulk_xchg_msg": "This item is available on the Currency Exchange Market",
++    "price_net": "Net",
++    "funpay_each": "each",
++    "funpay_stack": "stack of {0}",
 +    "price_rub": "RUB",
      "market_ratio": "Market Ratio"
    },
    "settings": {
-@@ -349,6 +350,9 @@
+@@ -349,6 +353,14 @@
      "use_intl_site": "Force the English version of the site"
    },
    "price_check": {
-+    "show_funpay_rub": "Show price in rubles using rate from",
++    "show_funpay_rub": "Show price in real money using rate from",
 +    "funpay_server": "FunPay league",
 +    "funpay_auto": "Auto (same as price check league)",
++    "funpay_currency": "Currency",
++    "funpay_adjust": "my price relative to FunPay rate (e.g. -5)",
++    "funpay_commission": "FunPay buyer markup (you sell for 100, buyer sees 121.18 → 21.18)",
++    "funpay_show_net": "Show \"Net\" column (price minus commission)",
++    "funpay_refresh": "Refresh rate now",
      "name": "Price check",
      "hotkey" :"Auto-hide Mode",
      "hotkey_locked" :"Open without auto-hide",
 diff --git a/renderer/public/data/ko/app_i18n.json b/renderer/public/data/ko/app_i18n.json
-index af09ab3..867d1a9 100644
+index af09ab3..7a8a159 100644
 --- a/renderer/public/data/ko/app_i18n.json
 +++ b/renderer/public/data/ko/app_i18n.json
-@@ -290,6 +290,7 @@
+@@ -290,6 +290,10 @@
      "getting_price_from": "from poe.ninja \u2026",
      "you_have": "가진 갯수",
      "stack": "스택",
++    "price_net": "Net",
++    "funpay_each": "each",
++    "funpay_stack": "stack of {0}",
 +    "price_rub": "RUB",
      "market_ratio": "시장 비율"
    },
    "settings": {
-@@ -323,6 +324,9 @@
+@@ -323,6 +327,14 @@
      "debug_hotkeys": "모든 키 스트로크 기록"
    },
    "price_check": {
-+    "show_funpay_rub": "Show price in rubles using rate from",
++    "show_funpay_rub": "Show price in real money using rate from",
 +    "funpay_server": "FunPay league",
 +    "funpay_auto": "Auto (same as price check league)",
++    "funpay_currency": "Currency",
++    "funpay_adjust": "my price relative to FunPay rate (e.g. -5)",
++    "funpay_commission": "FunPay buyer markup (you sell for 100, buyer sees 121.18 → 21.18)",
++    "funpay_show_net": "Show \"Net\" column (price minus commission)",
++    "funpay_refresh": "Refresh rate now",
      "name": "Price check",
      "hotkey" :"Auto-hide Mode",
      "hotkey_locked" :"Open without auto-hide",
 diff --git a/renderer/public/data/ru/app_i18n.json b/renderer/public/data/ru/app_i18n.json
-index 5483c4b..b4af030 100644
+index 5483c4b..e8007cb 100644
 --- a/renderer/public/data/ru/app_i18n.json
 +++ b/renderer/public/data/ru/app_i18n.json
-@@ -329,6 +329,7 @@
+@@ -329,6 +329,10 @@
      "you_have": "В наличии",
      "stack": "Стак",
      "legacy_bulk_xchg_msg": "Этот предмет доступен на внутриигровом рынке обмена валют",
++    "price_net": "На руки",
++    "funpay_each": "/ шт.",
++    "funpay_stack": "стак {0} шт.",
 +    "price_rub": "Рубли",
      "market_ratio": "Рыночный курс"
    },
    "settings": {
-@@ -363,6 +364,9 @@
+@@ -363,6 +367,14 @@
      "use_intl_site": "Использовать английскую версию сайта"
    },
    "price_check": {
-+    "show_funpay_rub": "Показывать цену в рублях по курсу",
++    "show_funpay_rub": "Показывать цену в реальной валюте по курсу",
 +    "funpay_server": "Лига на FunPay",
 +    "funpay_auto": "Авто (по лиге прайс-чека)",
++    "funpay_currency": "Валюта",
++    "funpay_adjust": "моя цена относительно курса FunPay (например, -5)",
++    "funpay_commission": "наценка FunPay для покупателя (продаёте за 100 ₽ — покупатель видит 121.18 ₽ → 21.18)",
++    "funpay_show_net": "Показывать колонку «На руки» (цена минус комиссия)",
++    "funpay_refresh": "Обновить курс сейчас",
      "name": "Прайс-чек",
      "hotkey" :"Режим авто-скрытия",
      "hotkey_locked" :"Открыть без авто-скрытия",
 diff --git a/renderer/src/web/Config.ts b/renderer/src/web/Config.ts
-index c0f2292..e5a8d61 100644
+index c0f2292..8d9a8bd 100644
 --- a/renderer/src/web/Config.ts
 +++ b/renderer/src/web/Config.ts
 @@ -123,7 +123,7 @@ export interface Config {
@@ -96,11 +120,11 @@ index c0f2292..e5a8d61 100644
  
  export const defaultConfig = (): Config => ({
 -  configVersion: 18,
-+  configVersion: 19,
++  configVersion: 20,
    overlayKey: 'Shift + Space',
    overlayBackground: 'rgba(129, 139, 149, 0.15)',
    overlayBackgroundClose: true,
-@@ -435,6 +435,14 @@ function upgradeConfig (_config: Config): Config {
+@@ -435,6 +435,24 @@ function upgradeConfig (_config: Config): Config {
  
      config.configVersion = 18
    }
@@ -112,15 +136,25 @@ index c0f2292..e5a8d61 100644
 +
 +    config.configVersion = 19
 +  }
++
++  if (config.configVersion < 20) {
++    const priceCheck = config.widgets.find(w => w.wmType === 'price-check')!
++    priceCheck.funpayCurrency = 'rub'
++    priceCheck.funpayAdjust = 0
++    priceCheck.funpayCommission = 21.18
++    priceCheck.funpayShowNet = true
++
++    config.configVersion = 20
++  }
    /* eslint-enable */
  
    return config as unknown as Config
 diff --git a/renderer/src/web/background/FunPay.ts b/renderer/src/web/background/FunPay.ts
 new file mode 100644
-index 0000000..82a1c06
+index 0000000..c739b3d
 --- /dev/null
 +++ b/renderer/src/web/background/FunPay.ts
-@@ -0,0 +1,406 @@
+@@ -0,0 +1,494 @@
 +import { shallowRef, readonly, watch, computed } from 'vue'
 +import { createGlobalState } from '@vueuse/core'
 +import { Host } from '@/web/background/IPC'
@@ -141,6 +175,11 @@ index 0000000..82a1c06
 +// how many cheapest lots are used to calculate the rate (median)
 +const CHEAPEST_LOTS = 5
 +const MIN_ONLINE_LOTS = 3
++// sellers sometimes list absurd stock (e.g. 1 000 000 000) - not counted in market depth
++const MAX_REAL_STOCK = 10000000
++
++export type FunPayCurrency = 'rub' | 'usd' | 'eur'
++const CURRENCY_UNITS: Record<FunPayCurrency, string> = { rub: '₽', usd: '$', eur: '€' }
 +
 +interface FunPayLot {
 +  serverId: string
@@ -156,12 +195,23 @@ index 0000000..82a1c06
 +  csrfToken: string | undefined
 +}
 +
++interface RateInfo {
++  rate: number
++  /** how much currency is on sale at a price close to the rate */
++  depth: number
++  /** how many lots are counted in depth */
++  depthLots: number
++}
++
 +export interface FunPayRates {
 +  /** price of 1 Divine Orb */
 +  divine: number | undefined
 +  /** price of 1 Chaos Orb from the FunPay chaos page (fallback only) */
 +  chaos: number | undefined
-+  /** currency symbol shown by FunPay (normally ₽) */
++  /** Divine Orbs on sale near the rate */
++  divineDepth: number
++  divineDepthLots: number
++  /** currency symbol shown by FunPay (₽, $, €) */
 +  unit: string
 +  /** FunPay league (server) name, e.g. "(PC) Curse of the Allflame" */
 +  server: string
@@ -178,14 +228,26 @@ index 0000000..82a1c06
 +  /** PC leagues available on FunPay (names as shown on the site) */
 +  const servers = shallowRef<string[]>([])
 +  const serversLoading = shallowRef(false)
++  /** ticks every 30s, used for "updated N min ago" */
++  const now = shallowRef(Date.now())
 +
 +  let lastUpdateTime = 0
 +  let lastInterestTime = 0
 +  let lastAttemptTime = 0
-+  let currencySwitchTried = false
++  const currencySwitchTried = new Set<FunPayCurrency>()
 +
 +  const widget = computed(() => AppConfig<PriceCheckWidget>('price-check'))
 +  const enabled = computed(() => widget.value?.showFunpayRub !== false)
++  const currency = computed<FunPayCurrency>(() => widget.value?.funpayCurrency ?? 'rub')
++  /** my listing price relative to the market rate, % (e.g. -5) */
++  const adjustPct = computed(() => Number(widget.value?.funpayAdjust) || 0)
++  /**
++   * FunPay markup for the buyer, % (seller sets 100, buyer sees 121.18 -> 21.18).
++   * Prices on FunPay pages are buyer prices, so seller gets price / (1 + markup).
++   */
++  const commissionPct = computed(() => Number(widget.value?.funpayCommission) || 0)
++  const showNet = computed(() =>
++    enabled.value && widget.value?.funpayShowNet !== false && commissionPct.value > 0)
 +
 +  async function load (force = false) {
 +    if (!enabled.value) return
@@ -202,10 +264,11 @@ index 0000000..82a1c06
 +    lastAttemptTime = Date.now()
 +    isLoading.value = true
 +    try {
++      const wanted = currency.value
 +      let divPage = await fetchPage(DIVINE_PAGE)
-+      if (!isRub(divPage.unit) && !currencySwitchTried) {
-+        currencySwitchTried = true
-+        await switchCurrencyToRub(divPage.csrfToken)
++      if (divPage.unit !== CURRENCY_UNITS[wanted] && !currencySwitchTried.has(wanted)) {
++        currencySwitchTried.add(wanted)
++        await switchCurrency(wanted, divPage.csrfToken)
 +        divPage = await fetchPage(DIVINE_PAGE)
 +      }
 +      const chaosPage = await fetchPage(CHAOS_PAGE)
@@ -217,10 +280,12 @@ index 0000000..82a1c06
 +        throw new Error(`FunPay: лига "${override ?? league.id}" не найдена. Укажите её вручную в настройках прайс-чека.`)
 +      }
 +
-+      let divine = calcRate(divPage.lots, server.id)
-+      const chaos = calcRate(chaosPage.lots,
++      const divInfo = calcRate(divPage.lots, server.id)
++      const chaosInfo = calcRate(chaosPage.lots,
 +        chaosPage.servers.find(s => s.name === server.name)?.id ?? server.id)
 +
++      let divine = divInfo?.rate
++      const chaos = chaosInfo?.rate
 +      // divine price missing -> derive from FunPay chaos page
 +      const ninjaRate = xchgRate.value
 +      if (divine == null && chaos != null && ninjaRate) divine = chaos * ninjaRate
@@ -228,7 +293,9 @@ index 0000000..82a1c06
 +      rates.value = {
 +        divine,
 +        chaos,
-+        unit: divPage.unit || '₽',
++        divineDepth: divInfo?.depth ?? 0,
++        divineDepthLots: divInfo?.depthLots ?? 0,
++        unit: divPage.unit || CURRENCY_UNITS[wanted],
 +        server: server.name,
 +        updatedAt: Date.now()
 +      }
@@ -260,6 +327,12 @@ index 0000000..82a1c06
 +    load()
 +  }
 +
++  /** reload the rate right now */
++  function refresh () {
++    lastInterestTime = Date.now()
++    load(true)
++  }
++
 +  /** how many Divine Orbs is 1 Mirror of Kalandra worth (poe.ninja) */
 +  function divinesPerMirror (): number | undefined {
 +    const divChaos = xchgRate.value
@@ -281,6 +354,7 @@ index 0000000..82a1c06
 +    return r.chaos
 +  }
 +
++  /** market value at FunPay rates */
 +  function convert (amount: number, currency: string): number | undefined {
 +    if (!rates.value) return undefined
 +    const { divine } = rates.value
@@ -297,22 +371,43 @@ index 0000000..82a1c06
 +    }
 +  }
 +
++  /** my listing price: market value +/- my adjustment */
++  function listPrice (amount: number, currency: string): number | undefined {
++    const value = convert(amount, currency)
++    return value != null ? value * (1 + adjustPct.value / 100) : undefined
++  }
++
++  /** what I get after FunPay commission */
++  function netPrice (amount: number, currency: string): number | undefined {
++    const value = listPrice(amount, currency)
++    return value != null ? value / (1 + commissionPct.value / 100) : undefined
++  }
++
 +  function openFunPay () {
 +    window.open(FUNPAY_DIVINE_URL)
 +  }
 +
 +  function format (value: number | undefined): string {
 +    if (value == null || !Number.isFinite(value)) return ''
-+    const unit = rates.value?.unit ?? '₽'
++    const unit = rates.value?.unit ?? CURRENCY_UNITS[currency.value]
 +    let num: string
-+    if (value < 1) {
++    if (value < 0.1) {
++      num = Number(value.toPrecision(2)).toString()
++    } else if (value < 1) {
 +      num = Number(value.toFixed(2)).toString()
 +    } else if (value < 100) {
 +      num = Number(value.toFixed(1)).toString()
 +    } else {
-+      num = Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
++      num = groupThousands(value)
 +    }
 +    return `${num} ${unit}`
++  }
++
++  /** plain number for pasting into a FunPay lot form */
++  function clipboardText (value: number): string {
++    if (value >= 100) return String(Math.round(value))
++    if (value >= 1) return String(Number(value.toFixed(2)))
++    return String(Number(value.toPrecision(2)))
 +  }
 +
 +  const tooltip = computed(() => {
@@ -326,16 +421,29 @@ index 0000000..82a1c06
 +    if (r.divine != null && perMirror != null) {
 +      parts.push(`1 mirror = ${Math.round(perMirror)} div = ${format(perMirror * r.divine)}`)
 +    }
++    if (r.divineDepthLots > 0) {
++      parts.push(`В продаже по курсу (±5%): ~${groupThousands(r.divineDepth)} div, лотов: ${r.divineDepthLots}`)
++    }
++    if (adjustPct.value) {
++      parts.push(`Моя цена: ${adjustPct.value > 0 ? '+' : ''}${adjustPct.value}% к курсу`)
++    }
++    if (commissionPct.value) {
++      parts.push(`Наценка FunPay для покупателя: ${commissionPct.value}% (на руки = цена ÷ ${Number((1 + commissionPct.value / 100).toFixed(4))})`)
++    }
++    const mins = Math.max(0, Math.floor((now.value - r.updatedAt) / 60000))
++    parts.push(mins < 1 ? 'Обновлено только что' : `Обновлено ${mins} мин. назад`)
++    parts.push('Клик по заголовку — обновить курс, по цене — скопировать')
 +    return parts.join('\n')
 +  })
 +
 +  setInterval(() => { load() }, RETRY_INTERVAL_MS)
++  setInterval(() => { now.value = Date.now() }, 30 * 1000)
 +
 +  watch(leagues.selectedId, () => {
 +    rates.value = null
 +    if (lastInterestTime) load(true)
 +  })
-+  watch(() => widget.value?.funpayServer, () => {
++  watch(() => [widget.value?.funpayServer, widget.value?.funpayCurrency], () => {
 +    rates.value = null
 +    error.value = null
 +    lastAttemptTime = 0
@@ -345,18 +453,29 @@ index 0000000..82a1c06
 +  return {
 +    enabled,
 +    showColumn: computed(() => enabled.value && (rates.value != null || error.value != null)),
++    showNet,
++    currency,
 +    rates: readonly(rates),
 +    error: readonly(error),
++    isLoading: readonly(isLoading),
 +    servers: readonly(servers),
 +    serversLoading: readonly(serversLoading),
 +    loadServers,
 +    queueFetch,
++    refresh,
 +    convert,
++    listPrice,
++    netPrice,
 +    openFunPay,
 +    format,
++    clipboardText,
 +    tooltip
 +  }
 +})
++
++function groupThousands (value: number): string {
++  return Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
++}
 +
 +function pcServerNames (list: FunPayPage['servers']): string[] {
 +  return list
@@ -364,8 +483,29 @@ index 0000000..82a1c06
 +    .filter(name => /^\(PC\)/i.test(name))
 +}
 +
-+function isRub (unit: string) {
-+  return unit === '₽' || unit.toLowerCase().startsWith('руб')
++function calcRate (lots: FunPayLot[], serverId: string): RateInfo | undefined {
++  let pool = lots.filter(lot => lot.serverId === serverId)
++  if (!pool.length) return undefined
++
++  const online = pool.filter(lot => lot.online)
++  if (online.length >= MIN_ONLINE_LOTS) pool = online
++
++  const prices = pool
++    .map(lot => lot.price)
++    .sort((a, b) => a - b)
++    .slice(0, CHEAPEST_LOTS)
++
++  const mid = Math.floor(prices.length / 2)
++  const rate = (prices.length % 2)
++    ? prices[mid]
++    : (prices[mid - 1] + prices[mid]) / 2
++
++  const near = pool.filter(lot => lot.price <= rate * 1.05 && lot.amount < MAX_REAL_STOCK)
++  return {
++    rate,
++    depth: near.reduce((sum, lot) => sum + lot.amount, 0),
++    depthLots: near.length
++  }
 +}
 +
 +async function fetchPage (url: string): Promise<FunPayPage> {
@@ -410,7 +550,7 @@ index 0000000..82a1c06
 +  return { unit, servers, lots, csrfToken }
 +}
 +
-+async function switchCurrencyToRub (csrfToken: string | undefined) {
++async function switchCurrency (cy: FunPayCurrency, csrfToken: string | undefined) {
 +  if (!csrfToken) return
 +  const post = (confirmed: boolean) => Host.proxy('funpay.com/account/switchCurrency', {
 +    method: 'POST',
@@ -419,7 +559,7 @@ index 0000000..82a1c06
 +      'x-requested-with': 'XMLHttpRequest',
 +      accept: 'application/json, text/javascript, */*; q=0.01'
 +    },
-+    body: new URLSearchParams({ cy: 'rub', csrf_token: csrfToken, confirmed: String(confirmed) }).toString()
++    body: new URLSearchParams({ cy, csrf_token: csrfToken, confirmed: String(confirmed) }).toString()
 +  })
 +  try {
 +    const res = await post(false)
@@ -436,24 +576,6 @@ index 0000000..82a1c06
 +  const clean = text.replace(/[\s   ]/g, '').replace(',', '.')
 +  const match = clean.match(/[\d.]+/)
 +  return match ? Number(match[0]) : NaN
-+}
-+
-+function calcRate (lots: FunPayLot[], serverId: string): number | undefined {
-+  let pool = lots.filter(lot => lot.serverId === serverId)
-+  if (!pool.length) return undefined
-+
-+  const online = pool.filter(lot => lot.online)
-+  if (online.length >= MIN_ONLINE_LOTS) pool = online
-+
-+  const prices = pool
-+    .map(lot => lot.price)
-+    .sort((a, b) => a - b)
-+    .slice(0, CHEAPEST_LOTS)
-+
-+  const mid = Math.floor(prices.length / 2)
-+  return (prices.length % 2)
-+    ? prices[mid]
-+    : (prices[mid - 1] + prices[mid]) / 2
 +}
 +
 +function normalize (name: string) {
@@ -528,20 +650,24 @@ index 0000000..82a1c06
 +  return candidates.sort((a, b) => a.name.length - b.name.length)[0]
 +}
 diff --git a/renderer/src/web/overlay/widgets.ts b/renderer/src/web/overlay/widgets.ts
-index bdb87d3..9d1ffb0 100644
+index bdb87d3..eea05bb 100644
 --- a/renderer/src/web/overlay/widgets.ts
 +++ b/renderer/src/web/overlay/widgets.ts
-@@ -52,6 +52,8 @@ export interface PriceCheckWidget extends Widget {
+@@ -52,6 +52,12 @@ export interface PriceCheckWidget extends Widget {
    showCursor: boolean
    requestPricePrediction: boolean
    builtinBrowser: boolean
 +  showFunpayRub: boolean
 +  funpayServer: string
++  funpayCurrency: 'rub' | 'usd' | 'eur'
++  funpayAdjust: number
++  funpayCommission: number
++  funpayShowNet: boolean
  }
  
  export interface StopwatchWidget extends Widget {
 diff --git a/renderer/src/web/price-check/PriceCheckWindow.vue b/renderer/src/web/price-check/PriceCheckWindow.vue
-index f49d2a9..3966ddd 100644
+index f49d2a9..28f4fa6 100644
 --- a/renderer/src/web/price-check/PriceCheckWindow.vue
 +++ b/renderer/src/web/price-check/PriceCheckWindow.vue
 @@ -86,6 +86,7 @@ import CheckPositionCircle from './CheckPositionCircle.vue'
@@ -552,18 +678,22 @@ index f49d2a9..3966ddd 100644
  
  type ParseError = { name: string; message: string; rawText: ParsedItem['rawText'] }
  
-@@ -116,7 +117,9 @@ export default defineComponent({
+@@ -116,7 +117,13 @@ export default defineComponent({
          showCursor: true,
          requestPricePrediction: false,
          merchantOnly: true,
 -        defaultCurrency: null
 +        defaultCurrency: null,
 +        showFunpayRub: true,
-+        funpayServer: ''
++        funpayServer: '',
++        funpayCurrency: 'rub',
++        funpayAdjust: 0,
++        funpayCommission: 21.18,
++        funpayShowNet: true
        }
      }
    } satisfies WidgetSpec,
-@@ -141,6 +144,7 @@ export default defineComponent({
+@@ -141,6 +148,7 @@ export default defineComponent({
    setup (props) {
      const wm = inject<WidgetManager>('wm')!
      const { xchgRate, initialLoading: xchgRateLoading, queuePricesFetch } = usePoeninja()
@@ -571,7 +701,7 @@ index f49d2a9..3966ddd 100644
  
      nextTick(() => {
        props.config.wmWants = 'hide'
-@@ -194,6 +198,7 @@ export default defineComponent({
+@@ -194,6 +202,7 @@ export default defineComponent({
  
        if (item.value.isOk()) {
          queuePricesFetch()
@@ -580,10 +710,10 @@ index f49d2a9..3966ddd 100644
      })
  
 diff --git a/renderer/src/web/price-check/settings-price-check.vue b/renderer/src/web/price-check/settings-price-check.vue
-index a8b764d..e744076 100644
+index a8b764d..f1e2377 100644
 --- a/renderer/src/web/price-check/settings-price-check.vue
 +++ b/renderer/src/web/price-check/settings-price-check.vue
-@@ -56,6 +56,21 @@
+@@ -56,6 +56,41 @@
        v-model="requestPricePrediction">{{ t(':show_prediction') }} <span class="bg-gray-700 px-1 rounded">www.poeprices.info</span></ui-checkbox>
      <ui-checkbox class="mb-4"
        v-model="showCursor">{{ t(':cursor_pos') }}</ui-checkbox>
@@ -598,6 +728,26 @@ index a8b764d..e744076 100644
 +          </select>
 +          <button class="btn" @click="funpay.loadServers()" :disabled="funpay.serversLoading.value">{{ t('Refresh') }}</button>
 +        </div>
++        <div class="text-gray-500 mt-3 mb-1">{{ t(':funpay_currency') }}</div>
++        <div class="flex gap-x-4">
++          <ui-radio v-model="funpayCurrency" value="rub">₽ RUB</ui-radio>
++          <ui-radio v-model="funpayCurrency" value="usd">$ USD</ui-radio>
++          <ui-radio v-model="funpayCurrency" value="eur">€ EUR</ui-radio>
++        </div>
++        <div class="flex items-center gap-x-2 mt-3">
++          <input v-model.number="funpayAdjust" type="number" step="1" class="rounded bg-gray-900 px-1 w-16 font-poe text-center" />
++          <span>%</span>
++          <span class="text-gray-500">{{ t(':funpay_adjust') }}</span>
++        </div>
++        <div class="flex items-center gap-x-2 mt-1">
++          <input v-model.number="funpayCommission" type="number" step="0.01" min="0" max="200" class="rounded bg-gray-900 px-1 w-16 font-poe text-center" />
++          <span>%</span>
++          <span class="text-gray-500">{{ t(':funpay_commission') }}</span>
++        </div>
++        <ui-checkbox class="mt-2" v-model="funpayShowNet">{{ t(':funpay_show_net') }}</ui-checkbox>
++        <div class="flex items-center gap-x-2 mt-3">
++          <button class="btn" @click="funpay.refresh()" :disabled="funpay.isLoading.value">{{ t(':funpay_refresh') }}</button>
++        </div>
 +        <div v-if="funpay.rates.value" class="mt-1 text-gray-500 whitespace-pre-line">{{ funpay.tooltip.value }}</div>
 +        <div v-else-if="funpay.error.value" class="mt-1 text-red-400">{{ funpay.error.value }}</div>
 +      </div>
@@ -605,7 +755,7 @@ index a8b764d..e744076 100644
      <div class="border-2 rounded border-gray-700 mb-4">
        <div class="bg-gray-700 p-2">{{ t(':default_settings') }}</div>
        <online-filter-core class="p-2"
-@@ -107,6 +122,7 @@ import { ItemFilters } from './filters/interfaces.js'
+@@ -107,6 +142,7 @@ import { ItemFilters } from './filters/interfaces.js'
  import { configModelValue, configProp, findWidget } from '../settings/utils.js'
  import type { PriceCheckWidget } from '@/web/overlay/interfaces'
  import { useLeagues } from '../background/Leagues'
@@ -613,7 +763,7 @@ index a8b764d..e744076 100644
  
  export default defineComponent({
    name: 'price_check.name',
-@@ -117,6 +133,8 @@ export default defineComponent({
+@@ -117,6 +153,8 @@ export default defineComponent({
  
      const leagues = useLeagues()
      const { t } = useI18nNs('price_check')
@@ -622,7 +772,7 @@ index a8b764d..e744076 100644
  
      return {
        t,
-@@ -131,6 +149,18 @@ export default defineComponent({
+@@ -131,6 +169,34 @@ export default defineComponent({
        showSeller: configModelValue(() => configWidget.value, 'showSeller'),
        activateStockFilter: configModelValue(() => configWidget.value, 'activateStockFilter'),
        showCursor: configModelValue(() => configWidget.value, 'showCursor'),
@@ -630,6 +780,22 @@ index a8b764d..e744076 100644
 +      funpayServer: computed<string>({
 +        get: () => configWidget.value.funpayServer ?? '',
 +        set: (value) => { configWidget.value.funpayServer = value }
++      }),
++      funpayCurrency: configModelValue(() => configWidget.value, 'funpayCurrency'),
++      funpayShowNet: configModelValue(() => configWidget.value, 'funpayShowNet'),
++      funpayAdjust: computed<number>({
++        get: () => configWidget.value.funpayAdjust ?? 0,
++        set: (value) => {
++          if (typeof value !== 'number' || !Number.isFinite(value)) return
++          configWidget.value.funpayAdjust = Math.min(Math.max(value, -90), 500)
++        }
++      }),
++      funpayCommission: computed<number>({
++        get: () => configWidget.value.funpayCommission ?? 0,
++        set: (value) => {
++          if (typeof value !== 'number' || !Number.isFinite(value)) return
++          configWidget.value.funpayCommission = Math.min(Math.max(value, 0), 200)
++        }
 +      }),
 +      funpay,
 +      funpayServerOptions: computed(() => {
@@ -641,8 +807,119 @@ index a8b764d..e744076 100644
        builtinBrowser: configModelValue(() => configWidget.value, 'builtinBrowser'),
        requestPricePrediction: configModelValue(() => configWidget.value, 'requestPricePrediction'),
        collapseListings: configModelValue(() => configWidget.value, 'collapseListings'),
+diff --git a/renderer/src/web/price-check/trade/FunPayCells.vue b/renderer/src/web/price-check/trade/FunPayCells.vue
+new file mode 100644
+index 0000000..6c2edb8
+--- /dev/null
++++ b/renderer/src/web/price-check/trade/FunPayCells.vue
+@@ -0,0 +1,58 @@
++<template>
++  <template v-if="funpay.showColumn.value">
++    <td class="px-2 whitespace-nowrap text-right" :class="{ 'cursor-pointer': list != null }"
++      @click="copy(list, 'list')">
++      <span v-if="copied === 'list'" class="text-green-500"><i class="fas fa-check"></i></span>
++      <template v-else>{{ funpay.format(list) }}</template>
++    </td>
++    <td v-if="funpay.showNet.value" class="px-2 whitespace-nowrap text-right text-gray-400"
++      :class="{ 'cursor-pointer': net != null }"
++      @click="copy(net, 'net')">
++      <span v-if="copied === 'net'" class="text-green-500"><i class="fas fa-check"></i></span>
++      <template v-else>{{ funpay.format(net) }}</template>
++    </td>
++  </template>
++</template>
++
++<script lang="ts">
++import { defineComponent, computed, shallowRef } from 'vue'
++import { useFunPay } from '@/web/background/FunPay'
++
++export default defineComponent({
++  props: {
++    amount: {
++      type: Number,
++      required: true
++    },
++    currency: {
++      type: String,
++      required: true
++    }
++  },
++  setup (props) {
++    const funpay = useFunPay()
++    const copied = shallowRef<'list' | 'net' | null>(null)
++    let timer: ReturnType<typeof setTimeout> | undefined
++
++    async function copy (value: number | undefined, which: 'list' | 'net') {
++      if (value == null) return
++      try {
++        await navigator.clipboard.writeText(funpay.clipboardText(value))
++        copied.value = which
++        if (timer) clearTimeout(timer)
++        timer = setTimeout(() => { copied.value = null }, 1000)
++      } catch (e) {
++        console.warn('[funpay] copy failed', e)
++      }
++    }
++
++    return {
++      funpay,
++      copied,
++      copy,
++      list: computed(() => funpay.listPrice(props.amount, props.currency)),
++      net: computed(() => funpay.netPrice(props.amount, props.currency))
++    }
++  }
++})
++</script>
+diff --git a/renderer/src/web/price-check/trade/FunPayHeads.vue b/renderer/src/web/price-check/trade/FunPayHeads.vue
+new file mode 100644
+index 0000000..2b8bc0c
+--- /dev/null
++++ b/renderer/src/web/price-check/trade/FunPayHeads.vue
+@@ -0,0 +1,41 @@
++<template>
++  <template v-if="funpay.showColumn.value">
++    <th :class="headingClass" :title="funpay.tooltip.value"
++      class="cursor-pointer" @click="funpay.refresh()">
++      <div class="px-2 whitespace-nowrap">
++        {{ label }}<i v-if="funpay.isLoading.value" class="fas fa-sync-alt fa-spin ml-1 text-gray-500 text-xs"></i
++        ><i v-else-if="!funpay.rates.value" class="fas fa-exclamation-triangle ml-1 text-gray-500"></i>
++      </div>
++    </th>
++    <th v-if="funpay.showNet.value" :class="headingClass" :title="funpay.tooltip.value">
++      <div class="px-2 whitespace-nowrap">{{ t(':price_net') }}</div>
++    </th>
++  </template>
++</template>
++
++<script lang="ts">
++import { defineComponent, computed } from 'vue'
++import { useI18nNs } from '@/web/i18n'
++import { useFunPay } from '@/web/background/FunPay'
++
++export default defineComponent({
++  props: {
++    headingClass: {
++      type: String,
++      default: ''
++    }
++  },
++  setup () {
++    const { t } = useI18nNs('trade_result')
++    const funpay = useFunPay()
++
++    return {
++      t,
++      funpay,
++      label: computed(() => funpay.currency.value === 'rub'
++        ? t(':price_rub')
++        : funpay.currency.value.toUpperCase())
++    }
++  }
++})
++</script>
 diff --git a/renderer/src/web/price-check/trade/TradeBulk.vue b/renderer/src/web/price-check/trade/TradeBulk.vue
-index a4a06d3..16da0c5 100644
+index a4a06d3..ac41ac4 100644
 --- a/renderer/src/web/price-check/trade/TradeBulk.vue
 +++ b/renderer/src/web/price-check/trade/TradeBulk.vue
 @@ -22,8 +22,11 @@
@@ -659,33 +936,42 @@ index a4a06d3..16da0c5 100644
      </div>
      <div class="layout-column overflow-y-auto overflow-x-hidden">
        <table class="table-stripped w-full">
-@@ -32,6 +35,9 @@
+@@ -32,6 +35,7 @@
              <th :class="$style.tableHeading">
                <div class="px-2">{{ t(':price') }}</div>
              </th>
-+            <th v-if="showRub" :class="$style.tableHeading" :title="funpay.tooltip.value">
-+              <div class="px-2">{{ t(':price_rub') }}<i v-if="!funpay.rates.value" class="fas fa-exclamation-triangle ml-1 text-gray-500"></i></div>
-+            </th>
++            <fun-pay-heads :heading-class="$style.tableHeading" />
              <th :class="$style.tableHeading">
                <div class="pl-1 pr-2 flex text-xs" style="line-height: 1.3125rem;"><span class="w-8 inline-block text-right -ml-px mr-px">{{ (selectedCurr === 'xchgChaos') ? 'chaos' : 'div' }}</span><span>{{ '\u2009' }}/{{ '\u2009' }}</span><span class="w-8 inline-block">{{ t(':bulk') }}</span></div>
              </th>
-@@ -59,6 +65,7 @@
+@@ -59,6 +63,7 @@
              <tr v-else :key="result.id"
                :class="{ [$style.marketRatioRow]: ('marketRatio' in result) }">
                <td class="px-2">{{ Number((result.exchangeAmount / result.itemAmount).toFixed(4)) }}</td>
-+              <td v-if="showRub" class="px-2 whitespace-nowrap text-right">{{ funpay.format(funpay.convert(result.exchangeAmount / result.itemAmount, selectedCurr === 'xchgChaos' ? 'chaos' : 'divine')) }}</td>
++              <fun-pay-cells :amount="result.exchangeAmount / result.itemAmount" :currency="selectedCurr === 'xchgChaos' ? 'chaos' : 'divine'" />
                <td class="pl-1 whitespace-nowrap"><span class="w-8 inline-block text-right">{{ Number(result.exchangeAmount.toFixed(1)) }}</span><span>{{ '\u2009' }}/{{ '\u2009' }}</span><span class="w-8 inline-block">{{ Number(result.itemAmount.toFixed(1)) }}</span></td>
                <template v-if="'marketRatio' in result">
                  <td class="pl-1 pr-2 whitespace-nowrap text-center" :colspan="showSeller ? 4 : 3">{{ t(':market_ratio') }}</td>
-@@ -111,6 +118,7 @@ import { PriceCheckWidget } from '@/web/overlay/interfaces'
+@@ -111,6 +116,9 @@ import { PriceCheckWidget } from '@/web/overlay/interfaces'
  import { artificialSlowdown } from './artificial-slowdown'
  import OnlineFilter from './OnlineFilter.vue'
  import TradeLinks from './TradeLinks.vue'
 +import { useFunPay } from '@/web/background/FunPay'
++import FunPayHeads from './FunPayHeads.vue'
++import FunPayCells from './FunPayCells.vue'
  
  const slowdown = artificialSlowdown(900)
  
-@@ -321,9 +329,12 @@ export default defineComponent({
+@@ -263,7 +271,7 @@ function useMarketRatioFinder () {
+ }
+ 
+ export default defineComponent({
+-  components: { OnlineFilter, TradeLinks, UiErrorBox },
++  components: { OnlineFilter, TradeLinks, UiErrorBox, FunPayHeads, FunPayCells },
+   emits: ['reset'],
+   props: {
+     filters: {
+@@ -321,9 +329,11 @@ export default defineComponent({
      }
  
      const { t } = useI18nNs('trade_result')
@@ -694,12 +980,11 @@ index a4a06d3..16da0c5 100644
      return {
        t,
 +      funpay,
-+      showRub: funpay.showColumn,
        error,
        result,
        selectedResults,
 diff --git a/renderer/src/web/price-check/trade/TradeListing.vue b/renderer/src/web/price-check/trade/TradeListing.vue
-index 1c8e931..31f6117 100644
+index 1c8e931..ad93d7b 100644
 --- a/renderer/src/web/price-check/trade/TradeListing.vue
 +++ b/renderer/src/web/price-check/trade/TradeListing.vue
 @@ -11,6 +11,7 @@
@@ -710,33 +995,42 @@ index 1c8e931..31f6117 100644
        <trade-links v-if="list"
          :get-link="makeTradeLink" />
      </div>
-@@ -21,6 +22,9 @@
+@@ -21,6 +22,7 @@
              <th :class="$style.tableHeading">
                <div class="px-2">{{ t(':price') }}</div>
              </th>
-+            <th v-if="showRub" :class="$style.tableHeading" :title="funpay.tooltip.value">
-+              <div class="px-2">{{ t(':price_rub') }}<i v-if="!funpay.rates.value" class="fas fa-exclamation-triangle ml-1 text-gray-500"></i></div>
-+            </th>
++            <fun-pay-heads :heading-class="$style.tableHeading" />
              <th v-if="item.stackSize" :class="$style.tableHeading">
                <div class="px-2">{{ t(':stock') }}</div>
              </th>
-@@ -57,6 +61,7 @@
+@@ -57,6 +59,7 @@
                    <i v-if="!result.hasNote" class="fas fa-question" />
                  </span>
                </td>
-+              <td v-if="showRub" class="px-2 whitespace-nowrap text-right">{{ funpay.format(funpay.convert(result.priceAmount, result.priceCurrency)) }}</td>
++              <fun-pay-cells :amount="result.priceAmount" :currency="result.priceCurrency" />
                <td v-if="item.stackSize" class="px-2 text-right">{{ result.stackSize }}</td>
                <td v-if="filters.itemLevel" class="px-2 whitespace-nowrap text-right">{{ result.itemLevel }}</td>
                <td v-if="item.category === 'Gem'" class="pl-2 whitespace-nowrap">{{ result.level }}</td>
-@@ -102,6 +107,7 @@ import { ParsedItem } from '@/parser'
+@@ -102,6 +105,9 @@ import { ParsedItem } from '@/parser'
  import { artificialSlowdown } from './artificial-slowdown'
  import OnlineFilter from './OnlineFilter.vue'
  import TradeLinks from './TradeLinks.vue'
 +import { useFunPay } from '@/web/background/FunPay'
++import FunPayHeads from './FunPayHeads.vue'
++import FunPayCells from './FunPayCells.vue'
  
  const slowdown = artificialSlowdown(900)
  
-@@ -241,9 +247,12 @@ export default defineComponent({
+@@ -207,7 +213,7 @@ function useTradeApi () {
+ }
+ 
+ export default defineComponent({
+-  components: { OnlineFilter, TradeLinks, UiErrorBox },
++  components: { OnlineFilter, TradeLinks, UiErrorBox, FunPayHeads, FunPayCells },
+   emits: ['reset'],
+   props: {
+     filters: {
+@@ -241,9 +247,11 @@ export default defineComponent({
      }
  
      const { t } = useI18nNs('trade_result')
@@ -745,7 +1039,74 @@ index 1c8e931..31f6117 100644
      return {
        t,
 +      funpay,
-+      showRub: funpay.showColumn,
        list: searchResult,
        groupedResults: computed(() => {
          if (!slowdown.isReady.value) {
+diff --git a/renderer/src/web/price-check/trends/PriceTrend.vue b/renderer/src/web/price-check/trends/PriceTrend.vue
+index 700f1b0..c4e68d8 100644
+--- a/renderer/src/web/price-check/trends/PriceTrend.vue
++++ b/renderer/src/web/price-check/trends/PriceTrend.vue
+@@ -7,16 +7,19 @@
+       </i18n-t>
+     </div>
+     <template v-else>
+-      <item-quick-price class="flex-1 text-base justify-center"
+-        :price="trend.price"
+-        :fraction="filters.stackSize != null"
+-        :item-img="item.info.icon"
+-        :item-base="item.uniqueBase ?? item.info"
+-      >
+-        <template #item v-if="isValuableBasetype">
+-          <span class="text-gray-400">{{ t(':base_item') }}</span>
+-        </template>
+-      </item-quick-price>
++      <div class="flex-1 flex flex-col items-center">
++        <item-quick-price class="text-base justify-center"
++          :price="trend.price"
++          :fraction="filters.stackSize != null"
++          :item-img="item.info.icon"
++          :item-base="item.uniqueBase ?? item.info"
++        >
++          <template #item v-if="isValuableBasetype">
++            <span class="text-gray-400">{{ t(':base_item') }}</span>
++          </template>
++        </item-quick-price>
++        <div v-if="funpayText" class="text-sm text-gray-400 leading-tight" :title="funpay.tooltip.value">{{ funpayText }}</div>
++      </div>
+       <div v-if="trend.change" @click="openNinja" :class="$style['trend-btn']">
+         <div class="text-center">
+           <div class="leading-tight">
+@@ -68,6 +71,7 @@ import VueApexcharts from 'vue3-apexcharts'
+ import { ParsedItem } from '@/parser'
+ import { artificialSlowdown } from '../trade/artificial-slowdown'
+ import { ItemFilters } from '../filters/interfaces'
++import { useFunPay } from '@/web/background/FunPay'
+ 
+ const slowdown = artificialSlowdown(800)
+ 
+@@ -110,8 +114,25 @@ export default defineComponent({
+       }
+     })
+ 
++    const funpay = useFunPay()
++    const funpayText = computed(() => {
++      if (!funpay.enabled.value) return null
++      const detailsId = getDetailsId(props.item)
++      const info = detailsId && findPriceByQuery(detailsId)
++      if (!info) return null
++      const each = funpay.listPrice(info.chaos, 'chaos')
++      if (each == null) return null
++      const stack = props.item.stackSize?.value ?? 1
++      if (stack > 1) {
++        return `≈ ${funpay.format(each)} ${t(':funpay_each')} · ${t(':funpay_stack', [stack])} ≈ ${funpay.format(each * stack)}`
++      }
++      return `≈ ${funpay.format(each)}`
++    })
++
+     return {
+       t,
++      funpay,
++      funpayText,
+       trend,
+       openNinja () {
+         window.open(trend.value!.url)
