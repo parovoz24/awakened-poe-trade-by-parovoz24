@@ -1,0 +1,751 @@
+diff --git a/main/src/proxy.ts b/main/src/proxy.ts
+index cb209c0..d0854c1 100644
+--- a/main/src/proxy.ts
++++ b/main/src/proxy.ts
+@@ -9,6 +9,7 @@ const PROXY_HOSTS = [
+   { host: 'poe.kakaogames.com', official: true },
+   { host: 'poe.ninja', official: false },
+   { host: 'www.poeprices.info', official: false },
++  { host: 'funpay.com', official: false },
+ ]
+ 
+ export class HttpProxy {
+@@ -28,6 +29,10 @@ export class HttpProxy {
+           delete req.headers[key]
+         }
+       }
++      if (host === 'funpay.com') {
++        req.headers.referer = 'https://funpay.com/'
++        delete req.headers.cookie
++      }
+ 
+       const proxyReq = net.request({
+         url: 'https://' + req.url.slice('/proxy/'.length),
+diff --git a/renderer/public/data/en/app_i18n.json b/renderer/public/data/en/app_i18n.json
+index 1a1f8df..867848b 100644
+--- a/renderer/public/data/en/app_i18n.json
++++ b/renderer/public/data/en/app_i18n.json
+@@ -315,6 +315,7 @@
+     "you_have": "You have",
+     "stack": "Stack",
+     "legacy_bulk_xchg_msg": "This item is available on the Currency Exchange Market",
++    "price_rub": "RUB",
+     "market_ratio": "Market Ratio"
+   },
+   "settings": {
+@@ -349,6 +350,9 @@
+     "use_intl_site": "Force the English version of the site"
+   },
+   "price_check": {
++    "show_funpay_rub": "Show price in rubles using rate from",
++    "funpay_server": "FunPay league",
++    "funpay_auto": "Auto (same as price check league)",
+     "name": "Price check",
+     "hotkey" :"Auto-hide Mode",
+     "hotkey_locked" :"Open without auto-hide",
+diff --git a/renderer/public/data/ko/app_i18n.json b/renderer/public/data/ko/app_i18n.json
+index af09ab3..867d1a9 100644
+--- a/renderer/public/data/ko/app_i18n.json
++++ b/renderer/public/data/ko/app_i18n.json
+@@ -290,6 +290,7 @@
+     "getting_price_from": "from poe.ninja \u2026",
+     "you_have": "가진 갯수",
+     "stack": "스택",
++    "price_rub": "RUB",
+     "market_ratio": "시장 비율"
+   },
+   "settings": {
+@@ -323,6 +324,9 @@
+     "debug_hotkeys": "모든 키 스트로크 기록"
+   },
+   "price_check": {
++    "show_funpay_rub": "Show price in rubles using rate from",
++    "funpay_server": "FunPay league",
++    "funpay_auto": "Auto (same as price check league)",
+     "name": "Price check",
+     "hotkey" :"Auto-hide Mode",
+     "hotkey_locked" :"Open without auto-hide",
+diff --git a/renderer/public/data/ru/app_i18n.json b/renderer/public/data/ru/app_i18n.json
+index 5483c4b..b4af030 100644
+--- a/renderer/public/data/ru/app_i18n.json
++++ b/renderer/public/data/ru/app_i18n.json
+@@ -329,6 +329,7 @@
+     "you_have": "В наличии",
+     "stack": "Стак",
+     "legacy_bulk_xchg_msg": "Этот предмет доступен на внутриигровом рынке обмена валют",
++    "price_rub": "Рубли",
+     "market_ratio": "Рыночный курс"
+   },
+   "settings": {
+@@ -363,6 +364,9 @@
+     "use_intl_site": "Использовать английскую версию сайта"
+   },
+   "price_check": {
++    "show_funpay_rub": "Показывать цену в рублях по курсу",
++    "funpay_server": "Лига на FunPay",
++    "funpay_auto": "Авто (по лиге прайс-чека)",
+     "name": "Прайс-чек",
+     "hotkey" :"Режим авто-скрытия",
+     "hotkey_locked" :"Открыть без авто-скрытия",
+diff --git a/renderer/src/web/Config.ts b/renderer/src/web/Config.ts
+index c0f2292..e5a8d61 100644
+--- a/renderer/src/web/Config.ts
++++ b/renderer/src/web/Config.ts
+@@ -123,7 +123,7 @@ export interface Config {
+ }
+ 
+ export const defaultConfig = (): Config => ({
+-  configVersion: 18,
++  configVersion: 19,
+   overlayKey: 'Shift + Space',
+   overlayBackground: 'rgba(129, 139, 149, 0.15)',
+   overlayBackgroundClose: true,
+@@ -435,6 +435,14 @@ function upgradeConfig (_config: Config): Config {
+ 
+     config.configVersion = 18
+   }
++
++  if (config.configVersion < 19) {
++    const priceCheck = config.widgets.find(w => w.wmType === 'price-check')!
++    priceCheck.showFunpayRub = true
++    priceCheck.funpayServer = ''
++
++    config.configVersion = 19
++  }
+   /* eslint-enable */
+ 
+   return config as unknown as Config
+diff --git a/renderer/src/web/background/FunPay.ts b/renderer/src/web/background/FunPay.ts
+new file mode 100644
+index 0000000..82a1c06
+--- /dev/null
++++ b/renderer/src/web/background/FunPay.ts
+@@ -0,0 +1,406 @@
++import { shallowRef, readonly, watch, computed } from 'vue'
++import { createGlobalState } from '@vueuse/core'
++import { Host } from '@/web/background/IPC'
++import { AppConfig } from '@/web/Config'
++import { useLeagues } from './Leagues'
++import { usePoeninja } from './Prices'
++import type { PriceCheckWidget } from '@/web/overlay/interfaces'
++
++// FunPay "chips" pages for Path of Exile
++const DIVINE_PAGE = 'funpay.com/chips/173/'
++const CHAOS_PAGE = 'funpay.com/chips/76/'
++export const FUNPAY_DIVINE_URL = 'https://funpay.com/chips/173/'
++
++const UPDATE_INTERVAL_MS = 30 * 60 * 1000
++const RETRY_INTERVAL_MS = 4 * 60 * 1000
++const INTEREST_SPAN_MS = 20 * 60 * 1000
++
++// how many cheapest lots are used to calculate the rate (median)
++const CHEAPEST_LOTS = 5
++const MIN_ONLINE_LOTS = 3
++
++interface FunPayLot {
++  serverId: string
++  price: number
++  amount: number
++  online: boolean
++}
++
++interface FunPayPage {
++  unit: string
++  servers: Array<{ id: string, name: string }>
++  lots: FunPayLot[]
++  csrfToken: string | undefined
++}
++
++export interface FunPayRates {
++  /** price of 1 Divine Orb */
++  divine: number | undefined
++  /** price of 1 Chaos Orb from the FunPay chaos page (fallback only) */
++  chaos: number | undefined
++  /** currency symbol shown by FunPay (normally ₽) */
++  unit: string
++  /** FunPay league (server) name, e.g. "(PC) Curse of the Allflame" */
++  server: string
++  updatedAt: number
++}
++
++export const useFunPay = createGlobalState(() => {
++  const leagues = useLeagues()
++  const { xchgRate, findPriceByQuery } = usePoeninja()
++
++  const rates = shallowRef<FunPayRates | null>(null)
++  const error = shallowRef<string | null>(null)
++  const isLoading = shallowRef(false)
++  /** PC leagues available on FunPay (names as shown on the site) */
++  const servers = shallowRef<string[]>([])
++  const serversLoading = shallowRef(false)
++
++  let lastUpdateTime = 0
++  let lastInterestTime = 0
++  let lastAttemptTime = 0
++  let currencySwitchTried = false
++
++  const widget = computed(() => AppConfig<PriceCheckWidget>('price-check'))
++  const enabled = computed(() => widget.value?.showFunpayRub !== false)
++
++  async function load (force = false) {
++    if (!enabled.value) return
++    const league = leagues.selected.value
++    if (!league || league.realm !== 'pc-ggg') return
++    if (isLoading.value) return
++
++    if (!force && (
++      (Date.now() - lastUpdateTime) < UPDATE_INTERVAL_MS ||
++      (Date.now() - lastInterestTime) > INTEREST_SPAN_MS ||
++      (Date.now() - lastAttemptTime) < RETRY_INTERVAL_MS
++    )) return
++
++    lastAttemptTime = Date.now()
++    isLoading.value = true
++    try {
++      let divPage = await fetchPage(DIVINE_PAGE)
++      if (!isRub(divPage.unit) && !currencySwitchTried) {
++        currencySwitchTried = true
++        await switchCurrencyToRub(divPage.csrfToken)
++        divPage = await fetchPage(DIVINE_PAGE)
++      }
++      const chaosPage = await fetchPage(CHAOS_PAGE)
++      servers.value = pcServerNames(divPage.servers)
++
++      const override = widget.value?.funpayServer?.trim() || undefined
++      const server = findServer(divPage.servers, league.id, override)
++      if (!server) {
++        throw new Error(`FunPay: лига "${override ?? league.id}" не найдена. Укажите её вручную в настройках прайс-чека.`)
++      }
++
++      let divine = calcRate(divPage.lots, server.id)
++      const chaos = calcRate(chaosPage.lots,
++        chaosPage.servers.find(s => s.name === server.name)?.id ?? server.id)
++
++      // divine price missing -> derive from FunPay chaos page
++      const ninjaRate = xchgRate.value
++      if (divine == null && chaos != null && ninjaRate) divine = chaos * ninjaRate
++
++      rates.value = {
++        divine,
++        chaos,
++        unit: divPage.unit || '₽',
++        server: server.name,
++        updatedAt: Date.now()
++      }
++      error.value = null
++      lastUpdateTime = Date.now()
++    } catch (e) {
++      error.value = (e as Error).message
++      console.warn('[funpay]', error.value)
++    } finally {
++      isLoading.value = false
++    }
++  }
++
++  async function loadServers () {
++    if (serversLoading.value) return
++    serversLoading.value = true
++    try {
++      const page = await fetchPage(DIVINE_PAGE)
++      servers.value = pcServerNames(page.servers)
++    } catch (e) {
++      error.value = (e as Error).message
++    } finally {
++      serversLoading.value = false
++    }
++  }
++
++  function queueFetch () {
++    lastInterestTime = Date.now()
++    load()
++  }
++
++  /** how many Divine Orbs is 1 Mirror of Kalandra worth (poe.ninja) */
++  function divinesPerMirror (): number | undefined {
++    const divChaos = xchgRate.value
++    const mirror = findPriceByQuery({ ns: 'ITEM', name: 'Mirror of Kalandra', variant: undefined })
++    if (!divChaos || !mirror || !mirror.chaos) return undefined
++    return mirror.chaos / divChaos
++  }
++
++  /**
++   * Price of 1 Chaos Orb. FunPay chaos market is thin and noisy, so chaos is derived
++   * from the FunPay divine price and the in-game div/chaos ratio (poe.ninja).
++   * The FunPay chaos page is used only when poe.ninja rate is unavailable.
++   */
++  function chaosPrice (): number | undefined {
++    const r = rates.value
++    if (!r) return undefined
++    const ninjaRate = xchgRate.value
++    if (r.divine != null && ninjaRate) return r.divine / ninjaRate
++    return r.chaos
++  }
++
++  function convert (amount: number, currency: string): number | undefined {
++    if (!rates.value) return undefined
++    const { divine } = rates.value
++    const chaos = chaosPrice()
++    switch (currency) {
++      case 'divine': return divine != null ? amount * divine : undefined
++      case 'chaos': return chaos != null ? amount * chaos : undefined
++      case 'mirror': {
++        // mirror -> divines (poe.ninja) -> rubles (FunPay divine rate)
++        const perMirror = divinesPerMirror()
++        return (divine != null && perMirror != null) ? amount * perMirror * divine : undefined
++      }
++      default: return undefined
++    }
++  }
++
++  function openFunPay () {
++    window.open(FUNPAY_DIVINE_URL)
++  }
++
++  function format (value: number | undefined): string {
++    if (value == null || !Number.isFinite(value)) return ''
++    const unit = rates.value?.unit ?? '₽'
++    let num: string
++    if (value < 1) {
++      num = Number(value.toFixed(2)).toString()
++    } else if (value < 100) {
++      num = Number(value.toFixed(1)).toString()
++    } else {
++      num = Math.round(value).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
++    }
++    return `${num} ${unit}`
++  }
++
++  const tooltip = computed(() => {
++    const r = rates.value
++    if (!r) return error.value ?? 'FunPay…'
++    const parts = [`FunPay ${r.server}`]
++    if (r.divine != null) parts.push(`1 div = ${format(r.divine)}`)
++    const chaos = chaosPrice()
++    if (chaos != null) parts.push(`1 chaos = ${format(chaos)}`)
++    const perMirror = divinesPerMirror()
++    if (r.divine != null && perMirror != null) {
++      parts.push(`1 mirror = ${Math.round(perMirror)} div = ${format(perMirror * r.divine)}`)
++    }
++    return parts.join('\n')
++  })
++
++  setInterval(() => { load() }, RETRY_INTERVAL_MS)
++
++  watch(leagues.selectedId, () => {
++    rates.value = null
++    if (lastInterestTime) load(true)
++  })
++  watch(() => widget.value?.funpayServer, () => {
++    rates.value = null
++    error.value = null
++    lastAttemptTime = 0
++    if (lastInterestTime) load(true)
++  })
++
++  return {
++    enabled,
++    showColumn: computed(() => enabled.value && (rates.value != null || error.value != null)),
++    rates: readonly(rates),
++    error: readonly(error),
++    servers: readonly(servers),
++    serversLoading: readonly(serversLoading),
++    loadServers,
++    queueFetch,
++    convert,
++    openFunPay,
++    format,
++    tooltip
++  }
++})
++
++function pcServerNames (list: FunPayPage['servers']): string[] {
++  return list
++    .map(s => s.name)
++    .filter(name => /^\(PC\)/i.test(name))
++}
++
++function isRub (unit: string) {
++  return unit === '₽' || unit.toLowerCase().startsWith('руб')
++}
++
++async function fetchPage (url: string): Promise<FunPayPage> {
++  const response = await Host.proxy(url, {
++    headers: { 'accept-language': 'ru-RU,ru;q=0.9' }
++  })
++  if (!response.ok) throw new Error(`FunPay: HTTP ${response.status}`)
++  const html = await response.text()
++  const doc = new DOMParser().parseFromString(html, 'text/html')
++
++  let csrfToken: string | undefined
++  try {
++    const appData = JSON.parse(doc.body.getAttribute('data-app-data') ?? '{}')
++    csrfToken = appData['csrf-token']
++  } catch {}
++
++  const servers = Array.from(doc.querySelectorAll<HTMLOptionElement>('select[name="server"] option'))
++    .filter(opt => opt.value)
++    .map(opt => ({ id: opt.value, name: opt.textContent!.trim() }))
++
++  let unit = ''
++  const lots: FunPayLot[] = []
++  for (const row of Array.from(doc.querySelectorAll<HTMLElement>('a.tc-item'))) {
++    const priceEl = row.querySelector('.tc-price')
++    const unitEl = priceEl?.querySelector('.unit')
++    if (!priceEl) continue
++    if (!unit && unitEl) unit = unitEl.textContent!.trim()
++
++    const priceText = (priceEl.querySelector('div') ?? priceEl).childNodes[0]?.textContent ?? ''
++    const price = parseNumber(priceText)
++    const amount = parseNumber(row.querySelector('.tc-amount')?.textContent ?? '')
++    if (!Number.isFinite(price) || price <= 0) continue
++
++    lots.push({
++      serverId: row.dataset.server ?? '',
++      price,
++      amount: Number.isFinite(amount) ? amount : 0,
++      online: row.querySelector('.media-user.online') != null
++    })
++  }
++
++  return { unit, servers, lots, csrfToken }
++}
++
++async function switchCurrencyToRub (csrfToken: string | undefined) {
++  if (!csrfToken) return
++  const post = (confirmed: boolean) => Host.proxy('funpay.com/account/switchCurrency', {
++    method: 'POST',
++    headers: {
++      'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
++      'x-requested-with': 'XMLHttpRequest',
++      accept: 'application/json, text/javascript, */*; q=0.01'
++    },
++    body: new URLSearchParams({ cy: 'rub', csrf_token: csrfToken, confirmed: String(confirmed) }).toString()
++  })
++  try {
++    const res = await post(false)
++    const data = await res.json().catch(() => ({})) as { modal?: string }
++    if (data.modal) {
++      await post(true)
++    }
++  } catch (e) {
++    console.warn('[funpay] currency switch failed', e)
++  }
++}
++
++function parseNumber (text: string): number {
++  const clean = text.replace(/[\s   ]/g, '').replace(',', '.')
++  const match = clean.match(/[\d.]+/)
++  return match ? Number(match[0]) : NaN
++}
++
++function calcRate (lots: FunPayLot[], serverId: string): number | undefined {
++  let pool = lots.filter(lot => lot.serverId === serverId)
++  if (!pool.length) return undefined
++
++  const online = pool.filter(lot => lot.online)
++  if (online.length >= MIN_ONLINE_LOTS) pool = online
++
++  const prices = pool
++    .map(lot => lot.price)
++    .sort((a, b) => a - b)
++    .slice(0, CHEAPEST_LOTS)
++
++  const mid = Math.floor(prices.length / 2)
++  return (prices.length % 2)
++    ? prices[mid]
++    : (prices[mid - 1] + prices[mid]) / 2
++}
++
++function normalize (name: string) {
++  return name.toLowerCase().replace(/\s+/g, ' ').trim()
++}
++
++/**
++ * Maps trade league id to FunPay server name:
++ *   "Standard"                       -> "(PC) Standard"
++ *   "Hardcore"                       -> "(PC) Hardcore"
++ *   "Curse of the Allflame"          -> "(PC) Curse of the Allflame"
++ *   "Hardcore Curse of the Allflame" -> "(PC) Curse of the Allflame [Hardcore]"
++ */
++export function leagueToFunPayName (leagueId: string): string {
++  const hc = /\b(Hardcore|HC)\b/i.test(leagueId)
++  const ruthless = /\bRuthless\b/i.test(leagueId)
++  const base = leagueId.replace(/\b(Hardcore|HC|Ruthless|SSF)\b/gi, '').replace(/\s+/g, ' ').trim()
++
++  if (!base || /^standard$/i.test(base)) {
++    const parts: string[] = []
++    if (ruthless) parts.push('Ruthless')
++    if (hc) parts.push('Hardcore')
++    return `(PC) ${parts.length ? parts.join(' ') : 'Standard'}`
++  }
++
++  const suffix = (ruthless && hc)
++    ? ' [Ruthless Hardcore]'
++    : hc ? ' [Hardcore]' : ruthless ? ' [Ruthless]' : ''
++  return `(PC) ${base}${suffix}`
++}
++
++interface ParsedServer {
++  pc: boolean
++  base: string
++  hc: boolean
++  ruthless: boolean
++}
++
++function parseLeagueName (name: string): ParsedServer {
++  const pc = /^\(PC\)/i.test(name)
++  const clean = name.replace(/^\([^)]*\)\s*/, '')
++  const hc = /\b(Hardcore|HC)\b/i.test(clean)
++  const ruthless = /\bRuthless\b/i.test(clean)
++  const base = normalize(clean
++    .replace(/\[[^\]]*\]/g, '')
++    .replace(/\b(Hardcore|HC|Ruthless|SSF)\b/gi, ''))
++  return { pc, base, hc, ruthless }
++}
++
++function findServer (servers: FunPayPage['servers'], leagueId: string, override?: string) {
++  if (override) {
++    const needle = normalize(override)
++    return servers.find(s => normalize(s.name) === needle) ??
++      servers.find(s => normalize(s.name).includes(needle))
++  }
++
++  // 1. exact match, e.g. "Hardcore Curse of the Allflame" -> "(PC) Curse of the Allflame [Hardcore]"
++  const target = normalize(leagueToFunPayName(leagueId))
++  const exact = servers.find(s => normalize(s.name) === target)
++  if (exact) return exact
++
++  // 2. fuzzy match, e.g. trade league "Allflame" -> "(PC) Curse of the Allflame"
++  const league = parseLeagueName(leagueId)
++  const isPermanent = !league.base || league.base === 'standard'
++  const candidates = servers.filter(s => {
++    const fp = parseLeagueName(s.name)
++    if (!fp.pc || fp.hc !== league.hc || fp.ruthless !== league.ruthless) return false
++    if (isPermanent) return !fp.base || fp.base === 'standard'
++    return fp.base.length > 0 && (fp.base.includes(league.base) || league.base.includes(fp.base))
++  })
++  // prefer the shortest name (closest match)
++  return candidates.sort((a, b) => a.name.length - b.name.length)[0]
++}
+diff --git a/renderer/src/web/overlay/widgets.ts b/renderer/src/web/overlay/widgets.ts
+index bdb87d3..9d1ffb0 100644
+--- a/renderer/src/web/overlay/widgets.ts
++++ b/renderer/src/web/overlay/widgets.ts
+@@ -52,6 +52,8 @@ export interface PriceCheckWidget extends Widget {
+   showCursor: boolean
+   requestPricePrediction: boolean
+   builtinBrowser: boolean
++  showFunpayRub: boolean
++  funpayServer: string
+ }
+ 
+ export interface StopwatchWidget extends Widget {
+diff --git a/renderer/src/web/price-check/PriceCheckWindow.vue b/renderer/src/web/price-check/PriceCheckWindow.vue
+index f49d2a9..3966ddd 100644
+--- a/renderer/src/web/price-check/PriceCheckWindow.vue
++++ b/renderer/src/web/price-check/PriceCheckWindow.vue
+@@ -86,6 +86,7 @@ import CheckPositionCircle from './CheckPositionCircle.vue'
+ import AppTitleBar from '@/web/ui/AppTitlebar.vue'
+ import ItemQuickPrice from '@/web/ui/ItemQuickPrice.vue'
+ import { PriceCheckWidget, WidgetManager, WidgetSpec } from '../overlay/interfaces'
++import { useFunPay } from '@/web/background/FunPay'
+ 
+ type ParseError = { name: string; message: string; rawText: ParsedItem['rawText'] }
+ 
+@@ -116,7 +117,9 @@ export default defineComponent({
+         showCursor: true,
+         requestPricePrediction: false,
+         merchantOnly: true,
+-        defaultCurrency: null
++        defaultCurrency: null,
++        showFunpayRub: true,
++        funpayServer: ''
+       }
+     }
+   } satisfies WidgetSpec,
+@@ -141,6 +144,7 @@ export default defineComponent({
+   setup (props) {
+     const wm = inject<WidgetManager>('wm')!
+     const { xchgRate, initialLoading: xchgRateLoading, queuePricesFetch } = usePoeninja()
++    const funpay = useFunPay()
+ 
+     nextTick(() => {
+       props.config.wmWants = 'hide'
+@@ -194,6 +198,7 @@ export default defineComponent({
+ 
+       if (item.value.isOk()) {
+         queuePricesFetch()
++        funpay.queueFetch()
+       }
+     })
+ 
+diff --git a/renderer/src/web/price-check/settings-price-check.vue b/renderer/src/web/price-check/settings-price-check.vue
+index a8b764d..e744076 100644
+--- a/renderer/src/web/price-check/settings-price-check.vue
++++ b/renderer/src/web/price-check/settings-price-check.vue
+@@ -56,6 +56,21 @@
+       v-model="requestPricePrediction">{{ t(':show_prediction') }} <span class="bg-gray-700 px-1 rounded">www.poeprices.info</span></ui-checkbox>
+     <ui-checkbox class="mb-4"
+       v-model="showCursor">{{ t(':cursor_pos') }}</ui-checkbox>
++    <div class="mb-4">
++      <ui-checkbox v-model="showFunpayRub">{{ t(':show_funpay_rub') }} <span class="bg-gray-700 px-1 rounded">funpay.com</span></ui-checkbox>
++      <div v-if="showFunpayRub" class="mt-1 ml-6">
++        <div class="text-gray-500 mb-1">{{ t(':funpay_server') }}</div>
++        <div class="flex gap-x-2 items-center">
++          <select v-model="funpayServer" class="rounded bg-gray-900 px-1 flex-1 font-poe">
++            <option value="">{{ t(':funpay_auto') }}</option>
++            <option v-for="name of funpayServerOptions" :key="name" :value="name">{{ name }}</option>
++          </select>
++          <button class="btn" @click="funpay.loadServers()" :disabled="funpay.serversLoading.value">{{ t('Refresh') }}</button>
++        </div>
++        <div v-if="funpay.rates.value" class="mt-1 text-gray-500 whitespace-pre-line">{{ funpay.tooltip.value }}</div>
++        <div v-else-if="funpay.error.value" class="mt-1 text-red-400">{{ funpay.error.value }}</div>
++      </div>
++    </div>
+     <div class="border-2 rounded border-gray-700 mb-4">
+       <div class="bg-gray-700 p-2">{{ t(':default_settings') }}</div>
+       <online-filter-core class="p-2"
+@@ -107,6 +122,7 @@ import { ItemFilters } from './filters/interfaces.js'
+ import { configModelValue, configProp, findWidget } from '../settings/utils.js'
+ import type { PriceCheckWidget } from '@/web/overlay/interfaces'
+ import { useLeagues } from '../background/Leagues'
++import { useFunPay } from '../background/FunPay'
+ 
+ export default defineComponent({
+   name: 'price_check.name',
+@@ -117,6 +133,8 @@ export default defineComponent({
+ 
+     const leagues = useLeagues()
+     const { t } = useI18nNs('price_check')
++    const funpay = useFunPay()
++    if (!funpay.servers.value.length) funpay.loadServers()
+ 
+     return {
+       t,
+@@ -131,6 +149,18 @@ export default defineComponent({
+       showSeller: configModelValue(() => configWidget.value, 'showSeller'),
+       activateStockFilter: configModelValue(() => configWidget.value, 'activateStockFilter'),
+       showCursor: configModelValue(() => configWidget.value, 'showCursor'),
++      showFunpayRub: configModelValue(() => configWidget.value, 'showFunpayRub'),
++      funpayServer: computed<string>({
++        get: () => configWidget.value.funpayServer ?? '',
++        set: (value) => { configWidget.value.funpayServer = value }
++      }),
++      funpay,
++      funpayServerOptions: computed(() => {
++        const list = [...funpay.servers.value]
++        const current = configWidget.value.funpayServer
++        if (current && !list.includes(current)) list.unshift(current)
++        return list
++      }),
+       builtinBrowser: configModelValue(() => configWidget.value, 'builtinBrowser'),
+       requestPricePrediction: configModelValue(() => configWidget.value, 'requestPricePrediction'),
+       collapseListings: configModelValue(() => configWidget.value, 'collapseListings'),
+diff --git a/renderer/src/web/price-check/trade/TradeBulk.vue b/renderer/src/web/price-check/trade/TradeBulk.vue
+index a4a06d3..16da0c5 100644
+--- a/renderer/src/web/price-check/trade/TradeBulk.vue
++++ b/renderer/src/web/price-check/trade/TradeBulk.vue
+@@ -22,8 +22,11 @@
+           <span class="ml-1"><online-filter :filters="filters" api="bulk" /></span>
+         </div>
+       </div>
+-      <trade-links v-if="result"
+-        :get-link="makeTradeLink" />
++      <div class="flex items-center">
++        <button v-if="funpay.enabled.value" @click="funpay.openFunPay()" class="bg-gray-700 text-gray-400 rounded px-2 mr-1" title="funpay.com — Divine Orb">FunPay <i class="fas fa-external-link-alt text-xs" /></button>
++        <trade-links v-if="result"
++          :get-link="makeTradeLink" />
++      </div>
+     </div>
+     <div class="layout-column overflow-y-auto overflow-x-hidden">
+       <table class="table-stripped w-full">
+@@ -32,6 +35,9 @@
+             <th :class="$style.tableHeading">
+               <div class="px-2">{{ t(':price') }}</div>
+             </th>
++            <th v-if="showRub" :class="$style.tableHeading" :title="funpay.tooltip.value">
++              <div class="px-2">{{ t(':price_rub') }}<i v-if="!funpay.rates.value" class="fas fa-exclamation-triangle ml-1 text-gray-500"></i></div>
++            </th>
+             <th :class="$style.tableHeading">
+               <div class="pl-1 pr-2 flex text-xs" style="line-height: 1.3125rem;"><span class="w-8 inline-block text-right -ml-px mr-px">{{ (selectedCurr === 'xchgChaos') ? 'chaos' : 'div' }}</span><span>{{ '\u2009' }}/{{ '\u2009' }}</span><span class="w-8 inline-block">{{ t(':bulk') }}</span></div>
+             </th>
+@@ -59,6 +65,7 @@
+             <tr v-else :key="result.id"
+               :class="{ [$style.marketRatioRow]: ('marketRatio' in result) }">
+               <td class="px-2">{{ Number((result.exchangeAmount / result.itemAmount).toFixed(4)) }}</td>
++              <td v-if="showRub" class="px-2 whitespace-nowrap text-right">{{ funpay.format(funpay.convert(result.exchangeAmount / result.itemAmount, selectedCurr === 'xchgChaos' ? 'chaos' : 'divine')) }}</td>
+               <td class="pl-1 whitespace-nowrap"><span class="w-8 inline-block text-right">{{ Number(result.exchangeAmount.toFixed(1)) }}</span><span>{{ '\u2009' }}/{{ '\u2009' }}</span><span class="w-8 inline-block">{{ Number(result.itemAmount.toFixed(1)) }}</span></td>
+               <template v-if="'marketRatio' in result">
+                 <td class="pl-1 pr-2 whitespace-nowrap text-center" :colspan="showSeller ? 4 : 3">{{ t(':market_ratio') }}</td>
+@@ -111,6 +118,7 @@ import { PriceCheckWidget } from '@/web/overlay/interfaces'
+ import { artificialSlowdown } from './artificial-slowdown'
+ import OnlineFilter from './OnlineFilter.vue'
+ import TradeLinks from './TradeLinks.vue'
++import { useFunPay } from '@/web/background/FunPay'
+ 
+ const slowdown = artificialSlowdown(900)
+ 
+@@ -321,9 +329,12 @@ export default defineComponent({
+     }
+ 
+     const { t } = useI18nNs('trade_result')
++    const funpay = useFunPay()
+ 
+     return {
+       t,
++      funpay,
++      showRub: funpay.showColumn,
+       error,
+       result,
+       selectedResults,
+diff --git a/renderer/src/web/price-check/trade/TradeListing.vue b/renderer/src/web/price-check/trade/TradeListing.vue
+index 1c8e931..31f6117 100644
+--- a/renderer/src/web/price-check/trade/TradeListing.vue
++++ b/renderer/src/web/price-check/trade/TradeListing.vue
+@@ -11,6 +11,7 @@
+       </div>
+       <online-filter v-if="list" :filters="filters" api="trade" />
+       <div class="flex-1"></div>
++      <button v-if="funpay.enabled.value" @click="funpay.openFunPay()" class="bg-gray-700 text-gray-400 rounded px-2 mr-1" title="funpay.com — Divine Orb">FunPay <i class="fas fa-external-link-alt text-xs" /></button>
+       <trade-links v-if="list"
+         :get-link="makeTradeLink" />
+     </div>
+@@ -21,6 +22,9 @@
+             <th :class="$style.tableHeading">
+               <div class="px-2">{{ t(':price') }}</div>
+             </th>
++            <th v-if="showRub" :class="$style.tableHeading" :title="funpay.tooltip.value">
++              <div class="px-2">{{ t(':price_rub') }}<i v-if="!funpay.rates.value" class="fas fa-exclamation-triangle ml-1 text-gray-500"></i></div>
++            </th>
+             <th v-if="item.stackSize" :class="$style.tableHeading">
+               <div class="px-2">{{ t(':stock') }}</div>
+             </th>
+@@ -57,6 +61,7 @@
+                   <i v-if="!result.hasNote" class="fas fa-question" />
+                 </span>
+               </td>
++              <td v-if="showRub" class="px-2 whitespace-nowrap text-right">{{ funpay.format(funpay.convert(result.priceAmount, result.priceCurrency)) }}</td>
+               <td v-if="item.stackSize" class="px-2 text-right">{{ result.stackSize }}</td>
+               <td v-if="filters.itemLevel" class="px-2 whitespace-nowrap text-right">{{ result.itemLevel }}</td>
+               <td v-if="item.category === 'Gem'" class="pl-2 whitespace-nowrap">{{ result.level }}</td>
+@@ -102,6 +107,7 @@ import { ParsedItem } from '@/parser'
+ import { artificialSlowdown } from './artificial-slowdown'
+ import OnlineFilter from './OnlineFilter.vue'
+ import TradeLinks from './TradeLinks.vue'
++import { useFunPay } from '@/web/background/FunPay'
+ 
+ const slowdown = artificialSlowdown(900)
+ 
+@@ -241,9 +247,12 @@ export default defineComponent({
+     }
+ 
+     const { t } = useI18nNs('trade_result')
++    const funpay = useFunPay()
+ 
+     return {
+       t,
++      funpay,
++      showRub: funpay.showColumn,
+       list: searchResult,
+       groupedResults: computed(() => {
+         if (!slowdown.isReady.value) {
