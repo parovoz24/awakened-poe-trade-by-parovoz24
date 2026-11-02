@@ -58,6 +58,11 @@
 Новые версии — на странице проекта на GitHub, в разделе Releases.
 
 
+ПОДДЕРЖАТЬ АВТОРА
+-----------------
+Если сборка пригодилась: https://www.donationalerts.com/r/parovoz24
+
+
 ЛИЦЕНЗИЯ
 --------
 Awakened PoE Trade распространяется по лицензии MIT (файл LICENSE.txt).
