@@ -20,7 +20,7 @@ try {
   if (Test-Path $out) { Remove-Item $out -Recurse -Force }
   New-Item -ItemType Directory -Path $out -Force | Out-Null
   Copy-Item $exe (Join-Path $out 'Awakened PoE Trade (RUB).exe')
-  Copy-Item (Join-Path $root 'docs\release-readme.txt') (Join-Path $out 'ПРОЧТИ МЕНЯ.txt')
+  Copy-Item (Join-Path $root 'docs\release-readme.txt') (Join-Path $out 'README - ПРОЧТИ МЕНЯ.txt')
   Copy-Item (Join-Path $root 'LICENSE') (Join-Path $out 'LICENSE.txt')
 
   Write-Host 'Упаковываю в zip (около минуты)...'

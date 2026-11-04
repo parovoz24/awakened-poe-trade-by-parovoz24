@@ -1,4 +1,90 @@
-﻿AWAKENED POE TRADE + ЦЕНЫ В РУБЛЯХ (FunPay)
+﻿AWAKENED POE TRADE + FUNPAY PRICES
+==================================
+
+Russian version below / Русская версия — ниже.
+
+This is an unofficial build of Awakened PoE Trade (price checker for Path of Exile)
+with an extra FunPay price column: next to every divine / chaos / mirror price
+it shows what that is worth on FunPay at the current rate.
+
+Original app: https://github.com/SnosMe/awakened-poe-trade
+This build:   https://github.com/parovoz24/awakened-poe-trade-by-parovoz24
+
+
+HOW TO RUN
+----------
+1. If the regular Awakened PoE Trade is running, close it
+   (tray icon next to the clock -> right click -> Quit).
+2. Run "Awakened PoE Trade (RUB).exe".
+   The first start may take 10-20 seconds - that is normal.
+3. If Windows shows a blue "Windows protected your PC" window,
+   click "More info" -> "Run anyway".
+   (The app is not signed with a paid certificate, so Windows does not know it.)
+4. Then use it like the regular Awakened PoE Trade: Ctrl+D on an item in game.
+
+The app is portable - no installation needed, put it in any folder.
+If you already used Awakened PoE Trade, your settings and hotkeys are kept.
+
+
+FUNPAY PRICE COLUMN
+-------------------
+- The rate is taken from FunPay: median of the 5 cheapest Divine Orb lots
+  in your league (online sellers only, if there are at least 3 of them).
+- Chaos is converted through divine: divine rate / chaos per divine (poe.ninja).
+  This way chaos and divine prices always agree.
+- Mirror is converted the same way: divines per Mirror of Kalandra (poe.ninja)
+  x FunPay divine rate.
+- The rate is refreshed every 30 minutes while you use the price checker.
+- On the first price check the rate loads for a couple of seconds - if the column
+  is missing, check the item again.
+- Hover the column header to see the FunPay league, the rates, how many divines
+  are on sale at that rate and when the rate was updated.
+- The "FunPay" button next to "Trade" opens the FunPay Divine Orb page.
+- Click a price to copy it - paste it straight into a FunPay lot.
+- Click the column header to refresh the rate right now.
+- Under the poe.ninja price you see the FunPay value per item and for the whole stack.
+
+
+SETTINGS
+--------
+Settings -> Price check:
+- "Show price in real money" - turn the column on / off.
+- "FunPay league":
+    "Auto" (default) - the league follows the price checker league.
+    If the column is missing in a new league or the rate looks wrong,
+    pick the league from the list manually ("Refresh" reloads the list).
+    Remember to switch back to "Auto" or pick the new league when it changes.
+- "Currency" - rubles, dollars or euros.
+- "My price relative to the rate" - e.g. -5 to undercut and appear at the top on FunPay.
+- "FunPay buyer markup" - 21.18% by default (you sell for 100, the buyer sees 121.18).
+  The "Net" column = price / 1.2118 - enter this number in the FunPay lot form,
+  and buyers will see the price from the main column.
+- "Refresh rate now" - without waiting 30 minutes.
+
+
+UPDATES
+-------
+This build does NOT update itself (an official update would remove the column).
+New versions are on the project page on GitHub, in Releases.
+
+
+SUPPORT THE AUTHOR
+------------------
+If this build is useful: https://www.donationalerts.com/r/parovoz24
+
+
+LICENSE
+-------
+Awakened PoE Trade is distributed under the MIT license (LICENSE.txt).
+Author of the original app - Alexander Drozdov (SnosMe).
+The FunPay price column is an unofficial addition by parovoz24;
+the original author is not related to it.
+
+========================================================================
+  РУССКАЯ ВЕРСИЯ
+========================================================================
+
+AWAKENED POE TRADE + ЦЕНЫ В РУБЛЯХ (FunPay)
 ===========================================
 
 Это неофициальная сборка программы Awakened PoE Trade (прайсчекер для Path of Exile)
