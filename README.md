@@ -1,11 +1,11 @@
 <div align="center">
 
-# Awakened PoE Trade — цены в рублях
+# Awakened PoE Trade — FunPay prices
 
-**Прайсчекер для Path of Exile с колонкой «Рубли» по курсу FunPay**
+**Path of Exile price checker with a FunPay price column**
 
-[![Скачать](https://img.shields.io/badge/Скачать-Releases-2ea44f?style=for-the-badge&logo=github)](../../releases/latest)
-[![Поддержать](https://img.shields.io/badge/Поддержать-DonationAlerts-F57507?style=for-the-badge)](https://www.donationalerts.com/r/parovoz24)
+[![Download](https://img.shields.io/badge/Download-Releases-2ea44f?style=for-the-badge&logo=github)](../../releases/latest)
+[![Support](https://img.shields.io/badge/Support-DonationAlerts-F57507?style=for-the-badge)](https://www.donationalerts.com/r/parovoz24)
 
 ![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
 ![Path of Exile](https://img.shields.io/badge/Path%20of%20Exile-1-AF6025)
@@ -13,92 +13,93 @@
 
 <br>
 
-<img src="docs/screenshot.png" alt="Колонка «Рубли» в прайсчекере" width="420">
+<img src="docs/screenshot.png" alt="FunPay price column in the price checker" width="420">
 
 </div>
 
 ---
 
-Это сборка популярного прайсчекера [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade)
-с одним важным дополнением: рядом с ценой в divine / chaos / mirror показывается,
-**сколько это стоит в рублях** по актуальному курсу с [FunPay](https://funpay.com/chips/173/).
+A build of the popular price checker [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade)
+with one important addition: next to every divine / chaos / mirror price it shows
+**what that is worth on [FunPay](https://funpay.com/chips/173/)** at the current rate.
 
-Всё остальное работает как в оригинале: те же горячие клавиши, настройки и интерфейс.
+Everything else works exactly like the original: same hotkeys, settings and interface.
 
-## Возможности
+## Features
 
 | | |
 |---|---|
-| 💰 **Колонка «Рубли»** | в таблице лотов и в bulk-обмене, в том же стиле, что и остальные колонки |
-| 📈 **Курс с FunPay** | медиана 5 самых дешёвых лотов Divine Orb вашей лиги, обновляется раз в 30 минут |
-| ⚖️ **Chaos через дивайн** | курс хаоса = курс дивайна ÷ div/chaos (poe.ninja) — цены в chaos и divine всегда согласованы |
-| 🪞 **Mirror of Kalandra** | пересчёт через дивайны: курс mirror → div (poe.ninja) × курс div → ₽ (FunPay) |
-| 🎯 **Выбор лиги** | автоматически по лиге прайсчекера или вручную из списка лиг FunPay |
-| 🔗 **Кнопка FunPay** | рядом с кнопкой Trade — открывает страницу дивайнов на FunPay |
-| ℹ️ **Подсказка с курсом** | наведите мышь на заголовок «Рубли» — лига, курс за 1 div / chaos / mirror, сколько дивайнов в продаже по курсу, когда обновлено |
-| 💸 **Своя цена и комиссия** | моя цена = курс ± N%, колонка «На руки» — сколько получите после комиссии FunPay (это же число вводится в форму лота) |
-| 📋 **Копирование по клику** | клик по цене в рублях — сумма в буфере обмена, сразу вставляйте в лот на FunPay |
-| 📦 **Сумма за стак** | под ценой poe.ninja — цена в рублях за штуку и за весь стак |
-| 🌍 **₽ / $ / €** | валюта колонки на выбор |
-| 🔄 **Обновить курс** | клик по заголовку «Рубли» обновляет курс сразу |
+| 💰 **FunPay price column** | in the listings table and in bulk exchange, styled like the other columns |
+| 📈 **Live FunPay rate** | median of the 5 cheapest Divine Orb lots in your league, refreshed every 30 minutes |
+| ⚖️ **Chaos via divine** | chaos rate = divine rate ÷ div/chaos ratio (poe.ninja), so chaos and divine prices always agree |
+| 🪞 **Mirror of Kalandra** | converted through divines: mirror → div (poe.ninja) × div rate (FunPay) |
+| 🎯 **League selection** | automatic from the price checker league, or pick any league from the FunPay list |
+| 🔗 **FunPay button** | next to the Trade button, opens the FunPay Divine Orb page |
+| ℹ️ **Rate tooltip** | hover the column header: league, rate for 1 div / chaos / mirror, how many divines are on sale at that rate, last update time |
+| 💸 **Your price and fees** | your price = rate ± N%, plus a **Net** column — what you receive after the FunPay fee (the number you enter in the lot form) |
+| 📋 **Click to copy** | click any price to copy it, then paste it straight into a FunPay lot |
+| 📦 **Stack value** | under the poe.ninja price: FunPay value per item and for the whole stack |
+| 🌍 **₽ / $ / €** | choose the currency of the column |
+| 🔄 **Refresh rate** | click the column header to refresh the rate instantly |
 
-## Установка
+## Installation
 
-1. Скачайте архив из [**Releases**](../../releases/latest) и распакуйте в любую папку.
-2. Закройте обычный Awakened PoE Trade, если он запущен.
-3. Запустите **`Awakened PoE Trade (RUB).exe`**.
+1. Download the archive from [**Releases**](../../releases/latest) and unpack it anywhere.
+2. Close the regular Awakened PoE Trade if it is running.
+3. Run **`Awakened PoE Trade (RUB).exe`**.
 
 > [!NOTE]
-> Программа не подписана платным сертификатом, поэтому Windows может показать окно
-> «Система Windows защитила ваш компьютер». Нажмите **«Подробнее» → «Выполнить в любом случае»**.
+> The app is not signed with a paid certificate, so Windows may show
+> "Windows protected your PC". Click **More info → Run anyway**.
 
-Программа портативная — установка не нужна. Если у вас уже был Awakened PoE Trade,
-настройки и горячие клавиши сохранятся.
+The app is portable — no installation needed. If you already used Awakened PoE Trade,
+your settings and hotkeys are kept.
 
-## Настройки
+## Settings
 
-**Настройки → Прайс-чек:**
+**Settings → Price check:**
 
-- **Показывать цену в рублях по курсу** — включить / выключить колонку.
-- **Лига на FunPay** — `Авто` (по лиге прайсчекера) или конкретная лига из списка.
-  Если с началом новой лиги колонка не появилась — выберите лигу вручную.
-- **Валюта** — рубли, доллары или евро.
-- **Моя цена относительно курса** — например, `-5`, чтобы встать в начало списка на FunPay.
-- **Наценка FunPay для покупателя** — по умолчанию 21.18% (продаёте за 100 ₽ — покупатель видит 121.18 ₽).
-  Цены на FunPay — это цены для покупателя, поэтому колонка **«На руки»** = цена ÷ 1.2118.
-  Именно число из «На руки» вводится в форму лота на FunPay — покупатель увидит цену из колонки «Рубли».
-- **Обновить курс сейчас** — без ожидания 30 минут.
+- **Show price in real money** — turn the column on / off.
+- **FunPay league** — `Auto` (same as the price checker league) or a specific league from the list.
+  If the column does not appear after a new league starts, pick the league manually.
+- **Currency** — rubles, dollars or euros.
+- **My price relative to the rate** — e.g. `-5` to undercut and appear at the top of the FunPay list.
+- **FunPay buyer markup** — 21.18% by default (you sell for 100, the buyer sees 121.18).
+  FunPay shows buyer prices, so the **Net** column = price ÷ 1.2118.
+  Enter the **Net** value in the FunPay lot form — buyers will see the price from the main column.
+- **Refresh rate now** — without waiting 30 minutes.
 
-## Как считается цена
+## How the price is calculated
 
 ```
-1. Программа загружает страницу FunPay «Божественные сферы»
-2. Оставляет лоты только вашей лиги (PC)
-3. Берёт 5 самых дешёвых (если онлайн ≥ 3 продавцов — только онлайн) → медиана = курс дивайна
-4. Chaos и Mirror пересчитываются через дивайн по курсу poe.ninja
-5. Цена предмета × курс = рубли
+1. The app loads the FunPay "Divine Orbs" page
+2. Keeps only lots of your league (PC)
+3. Takes the 5 cheapest (online sellers only, if there are at least 3) → median = divine rate
+4. Chaos and Mirror are converted through divines using the poe.ninja ratio
+5. Item price × rate = FunPay price
 
+   For example:
    15 divine  × 1.25 ₽               = 18.75 ₽
   300 chaos   × (1.25 ₽ ÷ 388 chaos) =  0.97 ₽
     2 mirror  × 450 div × 1.25 ₽     = 1 125 ₽
 ```
 
-Хаосы на FunPay продают мало и по разбросанным ценам, поэтому их курс берётся не со страницы
-хаосов, а через дивайн — так 300 chaos никогда не окажутся «дороже» 2 divine.
+Chaos Orbs on FunPay are sold in small amounts at scattered prices, so their rate is not taken
+from the chaos page but derived from the divine rate — 300 chaos will never look "more expensive" than 2 divine.
 
-Это цена, за которую валюту **продают** на FunPay. При продаже своей валюты
-с учётом комиссии вы обычно получите меньше.
+This is the price currency is **sold** for on FunPay. When selling your own currency,
+you usually receive less after the fee.
 
-## Поддержать проект
+## Support the project
 
-Если сборка пригодилась — можно поддержать автора 🧡
+If this build is useful to you, you can support the author 🧡
 
-<a href="https://www.donationalerts.com/r/parovoz24"><img src="https://img.shields.io/badge/DonationAlerts-parovoz24-F57507?style=for-the-badge" alt="Поддержать на DonationAlerts"></a>
+<a href="https://www.donationalerts.com/r/parovoz24"><img src="https://img.shields.io/badge/DonationAlerts-parovoz24-F57507?style=for-the-badge" alt="Support on DonationAlerts"></a>
 
-## Благодарности и лицензия
+## Credits and license
 
-- Оригинальная программа — [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade)
-  от Alexander Drozdov (SnosMe), лицензия MIT.
-- Изменения с рублями — parovoz24, та же лицензия [MIT](LICENSE).
+- Original app — [Awakened PoE Trade](https://github.com/SnosMe/awakened-poe-trade)
+  by Alexander Drozdov (SnosMe), MIT license.
+- FunPay price changes — parovoz24, same [MIT](LICENSE) license.
 
-Проект не связан с Grinding Gear Games, FunPay или автором оригинального Awakened PoE Trade.
+This project is not affiliated with Grinding Gear Games, FunPay or the author of the original Awakened PoE Trade.
